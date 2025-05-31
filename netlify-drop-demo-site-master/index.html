@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Calculadora de Preço por Peça</title>
+  <title>Precifique a Sua Peça</title>
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/11377/11377237.png" type="image/png" />
   <style>
     body {
@@ -32,23 +32,42 @@
     }
 
     button {
-      background-color: #4CAF50;
+      background-color: #D05C3D; /* terracota */
       color: white;
       border: none;
       cursor: pointer;
       font-weight: bold;
       margin-top: 20px;
+      transition: background-color 0.3s ease;
     }
 
     button:hover {
-      background-color: #45a049;
+      background-color: #A4432C; /* terracota escuro */
     }
 
     .resultado {
       margin-top: 30px;
-      font-size: 18px;
-      font-weight: bold;
+      font-size: 20px;
+      font-weight: 600;
       color: #333;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background-color: transparent;
+      box-shadow: none;
+      transition: all 0.3s ease;
+      display: none; /* escondido até calcular */
+    }
+
+    .resultado.mostrar {
+      display: block;
+      background-color: #F5E9E3; /* tom bem clarinho de terracota */
+      box-shadow: 0 2px 6px rgba(208, 92, 61, 0.3);
+    }
+
+.valor-destaque {
+  font-size: 24px; /* diminui o tamanho, antes estava maior */
+  color: #D05C3D;  /* cor terracota suave */
+  font-weight: bold;
     }
 
     .descricao {
@@ -56,7 +75,7 @@
       font-size: 16px;
       background: #f9f9f9;
       padding: 15px;
-      border-left: 5px solid #4CAF50;
+      border-left: 5px solid #D05C3D; /* barrinha terracota */
     }
 
     .rs-wrapper {
@@ -77,6 +96,15 @@
       font-weight: bold;
     }
 
+    /* Imagem do topo */
+    .topo-img {
+      width: 100%;        /* cobre toda a largura do container */
+      max-height: 250px;  /* limita a altura pra não ficar muito grande */
+      object-fit: cover;  /* corta partes da imagem se precisar, sem distorcer */
+      display: block;
+      border-radius: 8px 8px 0 0; /* opcional: bordas arredondadas só no topo */
+    }
+
     @media (max-width: 600px) {
       body {
         padding: 10px;
@@ -88,21 +116,24 @@
       }
 
       .resultado {
-        font-size: 16px;
+        font-size: 18px;
       }
     }
   </style>
 </head>
 <body>
 
-  <h2>Calculadora de Preço por Peça</h2>
+  <!-- Imagem no topo -->
+  <img src="https://images.pexels.com/photos/4968618/pexels-photo-4968618.jpeg"  alt="Imagem sobre precificação de crochê" class="topo-img">
+
+  <h2>Precifique a sua Peça feita por você</h2>
 
   <div class="descricao">
     Preencha os campos abaixo para calcular quanto cobrar pela sua peça de crochê.<br/>
-    Lembre-se: <strong>1kg = 1000 gramas</strong>.  
+    Lembre-se ao colocar o peso de sua peça: <strong>1kg = 1000 gramas, 1.5kg = 1500 gramas 2kg = 2000 gramas</strong>.  
   </div>
 
-  <label>Horas trabalhadas:</label>
+  <label>Horas trabalhadas na sua peça:</label>
   <select id="horasTrabalho">
     <option value="0.25">15min</option>
     <option value="0.5">30min</option>
@@ -135,51 +166,99 @@
     <option value="9.5">9h30</option>
     <option value="10">10h</option>
     <option value="10.5">10h30</option>
+    <option value="11">11h</option>
+    <option value="11.5">11h30</option>
+    <option value="12">12h</option>
+    <option value="12.5">12h30</option>
+    <option value="13">13h</option>
+    <option value="13.5">13h30</option>
+    <option value="14">14h</option>
+    <option value="14.5">14h30</option>
+    <option value="15">15h</option>
   </select>
-
-  <label>Valor por hora (opcional):</label>
+  <label>Quanto você cobra por hora (opcional):</label>
   <div class="rs-wrapper">
-    <input type="number" step="0.01" id="valorHora" value="0">
+    <input type="text" id="valorHora" value="0,00" />
   </div>
-
-  <label>Peso total do cone:</label>
+  <label>Peso do seu cone (peso total do cone embalado)</label>
   <select id="pesoTotal">
     <option value="1000">1kg</option>
     <option value="700">700 gramas</option>
     <option value="600">600 gramas</option>
     <option value="400">400 gramas</option>
     <option value="200">200 gramas</option>
+    <option value="100">100 gramas</option>
     <option value="1800">1.8kg</option>
     <option value="2000">2kg</option>
   </select>
 
-  <label>Valor pago no cone:</label>
+  <label>Valor que você pagou no cone</label>
   <div class="rs-wrapper">
-    <input type="number" id="valorCone" value="18" step="0.01">
+    <input type="text" id="valorCone" value="0,00" />
   </div>
 
-  <label>Peso usado na peça (em gramas):</label>
-  <input type="number" id="pesoUsado" value="8">
+  <label>Peso usado em sua peça (em gramas):</label>
+  <input type="text" id="pesoUsado" value="8" />
 
   <button onclick="calcular()">CALCULAR</button>
 
   <div class="resultado" id="resultado"></div>
 
   <script>
+    // Função para trocar vírgula por ponto para cálculo
+    function formatarNumeroParaCalculo(str) {
+      return parseFloat(str.replace(',', '.')) || 0;
+    }
+
+    // Função para formatar número para exibir com vírgula e 2 casas decimais
+    function formatarNumeroParaExibir(num) {
+      return num.toFixed(2).replace('.', ',');
+    }
+
+    // Função para formatar input tipo moeda enquanto digita
+    function formatarInputMoeda(e) {
+      let val = e.target.value;
+      // Permitir apenas números, vírgula e ponto
+      val = val.replace(/[^0-9,\\.]/g, '');
+      // Substituir pontos por vírgulas (normalizar)
+      val = val.replace(/\./g, ',');
+      // Garantir que tenha apenas uma vírgula
+      let parts = val.split(',');
+      if (parts.length > 2) {
+        val = parts[0] + ',' + parts.slice(1).join('');
+      }
+      e.target.value = val;
+    }
+
+    document.getElementById('valorCone').addEventListener('input', formatarInputMoeda);
+    document.getElementById('valorHora').addEventListener('input', formatarInputMoeda);
+  </script>
+  <script>
     function calcular() {
       const pesoTotal = parseFloat(document.getElementById('pesoTotal').value);
-      const valorCone = parseFloat(document.getElementById('valorCone').value);
-      const pesoUsado = parseFloat(document.getElementById('pesoUsado').value);
+      const valorConeStr = document.getElementById('valorCone').value;
+      const valorHoraStr = document.getElementById('valorHora').value;
+      const pesoUsadoStr = document.getElementById('pesoUsado').value;
       const horasTrabalho = parseFloat(document.getElementById('horasTrabalho').value);
-      const valorHora = parseFloat(document.getElementById('valorHora').value);
+
+      // Converte strings com vírgula para números float
+      const valorCone = formatarNumeroParaCalculo(valorConeStr);
+      const valorHora = formatarNumeroParaCalculo(valorHoraStr);
+      const pesoUsado = formatarNumeroParaCalculo(pesoUsadoStr);
+
+      if(pesoTotal <= 0 || valorCone < 0 || valorHora < 0 || pesoUsado < 0 || horasTrabalho < 0) {
+        alert("Por favor, verifique os valores inseridos, eles não podem ser negativos ou zero onde não faz sentido.");
+        return;
+      }
 
       const precoPorGrama = valorCone / pesoTotal;
       const custoMaterial = precoPorGrama * pesoUsado;
       const custoHoras = valorHora * horasTrabalho;
       const total = custoMaterial + custoHoras;
 
-      document.getElementById('resultado').innerText = 
-        `O valor que você precisa cobrar é R$ ${total.toFixed(2)} Reais.`;
+      const resultadoDiv = document.getElementById('resultado');
+      resultadoDiv.innerHTML = `O valor ideal para cobrar na sua peça é de <span class="valor-destaque">R$ ${formatarNumeroParaExibir(total)}</span>`;
+      resultadoDiv.classList.add('mostrar');
     }
   </script>
 
